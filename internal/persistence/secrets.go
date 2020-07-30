@@ -14,6 +14,12 @@ func SetCryptKey(cryptKey string) {
 	_cryptKey = crypt.PopulateKey(cryptKey)
 }
 
+func FromDB(rows []SecretRow) {
+	for _, row := range rows {
+		_secretsMap[row.key] = []byte(row.value)
+	}
+}
+
 func CheckCryptKey(cryptKey string) bool {
 	return string(_cryptKey) == string(crypt.PopulateKey(cryptKey))
 }
@@ -38,10 +44,17 @@ func SetSecret(key string, value string) error {
 		return fmt.Errorf("error when encrypt secret: %v\n", err)
 	}
 	_secretsMap[key] = encrypted
+	if _db != nil {
+		DeleteOne(_db, key)
+		InsertOne(_db, key, string(encrypted))
+	}
 
 	return nil
 }
 
 func RemoveSecret(key string) {
 	delete(_secretsMap, key)
+	if _db != nil {
+		DeleteOne(_db, key)
+	}
 }

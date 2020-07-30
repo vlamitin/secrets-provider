@@ -17,20 +17,27 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Println(*persist)
-
 	cryptKey, err := readCryptKey()
 	if err != nil {
 		fmt.Printf("error when read key: %v\n", err)
 	}
 
 	persistence.SetCryptKey(cryptKey)
+
+	if *persist {
+		db := persistence.Open()
+		persistence.PrepareDb(db)
+		persistence.FromDB(persistence.GetAll(db))
+
+		defer db.Close()
+	}
+
 	server.InitAndListen("localhost", *port)
 }
 
 func readCryptKey() (string, error) {
 	fmt.Print("Enter encryption/decryption key: ")
-	byteKey, err := terminal.ReadPassword(syscall.Stdin)
+	byteKey, err := terminal.ReadPassword(int(syscall.Stdin))
 	fmt.Print("\n")
 	if err != nil {
 		return "", fmt.Errorf("error when reading password from stdin: %w", err)
